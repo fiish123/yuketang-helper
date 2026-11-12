@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>雨课堂 · 课堂助手</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--line:#e5e7eb;--txt:#111827;--muted:#6b7280;--brand:#2563eb;--red:#dc2626}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt)}
+header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);padding:10px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:16px}
+.brand small{font-weight:400;color:var(--muted);margin-left:8px;font-size:12px}
+.pills{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{font-size:12px;padding:3px 10px;border-radius:999px;background:#f3f4f6;color:#374151;border:1px solid transparent}
+.pill.ok{background:#dcfce7;color:#166534}
+.pill.bad{background:#fee2e2;color:#991b1b}
+.pill.info{background:#dbeafe;color:#1e40af}
+main{padding:18px 20px 40px;max-width:1500px;margin:0 auto}
+.rollcall-banner{position:sticky;top:57px;z-index:19;margin:0 0 14px;background:#fef2f2;border:1px solid #fecaca;border-left:5px solid var(--red);color:#991b1b;border-radius:10px;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 4px 14px rgba(220,38,38,.08)}
+.rollcall-banner[hidden]{display:none}
+.rollcall-banner b{font-size:16px}
+.rollcall-banner .grow{flex:1;min-width:220px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.stat b{display:block;font-size:22px}
+.stat span{color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:16px;align-items:start}
+@media(max-width:1050px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+.panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;display:flex;flex-direction:column;gap:8px}
+.card .head{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.badge{font-size:11px;padding:1px 8px;border-radius:999px;background:#f3f4f6;color:#374151}
+.badge.submitted{background:#dcfce7;color:#166534}
+.badge.pending{background:#fef3c7;color:#92400e}
+.badge.failed{background:#fee2e2;color:#991b1b}
+.badge.new{background:#dbeafe;color:#1e40af}
+.badge.old{background:#f3f4f6;color:#6b7280}
+.cover{width:100%;border-radius:8px;border:1px solid #f0f1f3;background:#fafafa;display:block;aspect-ratio:16/9;object-fit:cover}
+.answers{font-weight:600;color:#1d4ed8;min-height:18px;font-size:13px}
+.choices{display:flex;gap:10px;flex-wrap:wrap}
+.choices label{font-size:12px;color:#374151;display:flex;align-items:center;gap:4px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px}
+button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+button.danger{background:#fff;color:#b91c1c;border-color:#fecaca}
+button:disabled{opacity:.55;cursor:progress}
+.result{font-size:12px;color:var(--muted);word-break:break-all;min-height:16px}
+.log{max-height:300px;overflow:auto;font-family:ui-monospace,Menlo,monospace;font-size:11px}
+.log div{padding:3px 0;border-bottom:1px dashed #f0f1f3;display:flex;gap:8px}
+.log .t{color:#9ca3af;white-space:nowrap}
+.log .k{font-weight:600;white-space:nowrap}
+.k-NEW_PROBLEM{color:#1d4ed8}.k-delay{color:#7c3aed}.k-solved{color:#15803d}.k-submit{color:#0f766e}.k-ws-close,.k-ws-error,.k-solve-error,.k-solve-fail{color:#b91c1c}.k-solve-aborted,.k-lesson-ended,.k-lesson-cleared{color:#b45309}.k-rollcall-hit{color:#dc2626;font-weight:700}.k-rollcall-miss{color:#9a3412}
+table{width:100%;border-collapse:collapse;font-size:12px}
+td,th{padding:5px 6px;border-bottom:1px solid #f1f2f4;text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:500}
+.modal{position:fixed;inset:0;background:rgba(17,24,39,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal[hidden]{display:none}
+.modal-card{background:#fff;border-radius:16px;padding:22px;text-align:center;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-card img{width:260px;height:260px;border:1px solid var(--line);border-radius:10px;margin:10px auto;display:block;background:#fafafa}
+.modal-card.wide{max-width:480px;text-align:left}
+.modal-card h2{margin:0 0 14px;font-size:17px}
+.modal-card label{display:block;font-size:12px;color:var(--muted);margin:12px 0 4px}
+.modal-card input,.modal-card select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff}
+.modal-card .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.modal-card hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+#switch-modal{z-index:60}
+.muted{color:var(--muted);font-size:12px}
+.empty{color:var(--muted);font-size:12px;padding:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">雨课堂 · 课堂助手<small id="lesson">lesson --</small></div>
+  <div class="pills">
+    <span class="pill" id="pill-login">登录检测中</span>
+    <span class="pill" id="pill-ws">WS 未知</span>
+    <span class="pill" id="pill-auto">自动解题 --</span>
+    <span class="pill" id="pill-delay">间隔 --</span>
+    <span class="pill" id="pill-age">事件 --</span>
+    <button id="btn-settings">设置</button>
+  </div>
+</header>
+<main>
+  <div id="rollcall-banner" class="rollcall-banner" hidden>
+    <b>⚠️ 随机点名点中了你</b>
+    <span class="grow" id="rollcall-text"></span>
+    <button onclick="ackRollcall()">知道了</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="c-total">0</b><span>已发现题目</span></div>
+    <div class="stat"><b id="c-submitted">0</b><span>已提交</span></div>
+    <div class="stat"><b id="c-pending">0</b><span>待处理</span></div>
+    <div class="stat"><b id="c-failed">0</b><span>失败</span></div>
+  </div>
+  <div class="grid">
+    <section class="panel">
+      <h2>课堂习题</h2>
+      <div id="list" class="cards"><div class="empty">加载中…</div></div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:16px">
+      <section class="panel"><h2>点名监控 <span id="rollcall-tip" class="muted"></span></h2><div id="rollcall" class="log"><div class="empty">暂无点名</div></div></section>
+      <section class="panel"><h2>实时事件</h2><div id="events" class="log"><div class="empty">加载中…</div></div></section>
+      <section class="panel"><h2>弹幕监控 <span id="danmu-tip" class="muted"></span></h2><div id="danmu" class="log"><div class="empty">暂无弹幕</div></div></section>
+      <section class="panel"><h2>提交记录</h2><div id="subs"><div class="empty">暂无</div></div></section>
+      <section class="panel"><h2>解题记录</h2><div id="solver"><div class="empty">暂无</div></div></section>
+    </aside>
+  </div>
+</main>
+
+<div class="modal" id="login-modal" hidden>
+  <div class="modal-card">
+    <h2>需要登录雨课堂</h2>
+    <p class="muted" id="login-hint">正在获取二维码…</p>
+    <img id="qr" alt="登录二维码" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">
+    <p class="muted">用微信或雨课堂 APP 扫码，登录成功后自动进入</p>
+    <button class="primary" onclick="refreshQr(true)">刷新二维码</button>
+  </div>
+</div>
+
+<div class="modal" id="settings-modal" hidden>
+  <div class="modal-card wide">
+    <h2>设置</h2>
+    <p class="muted" id="settings-reason" hidden style="color:#b45309;font-weight:600"></p>
+    <label for="apikey">DeepSeek API Key</label>
+    <input id="apikey" type="password" autocomplete="off" placeholder="sk-...">
+    <p class="muted" id="apikey-hint">未配置</p>
+    <div class="row"><button class="primary" id="save-key">保存 API Key</button><button id="clear-key">清除</button></div>
+    <hr>
+    <label for="lesson-select">正在上课的课堂</label>
+    <select id="lesson-select"><option value="">加载中…</option></select>
+    <div class="row"><button id="refresh-lessons">刷新列表</button><button class="primary" id="select-lesson">切换到该课堂</button></div>
+    <p class="muted" id="lesson-hint">切换课堂时会询问是否清空历史；也可以在这里手动清空。</p>
+    <label>历史数据</label>
+    <div class="row"><button id="clear-history">清空本课堂历史</button></div>
+    <p class="muted">清空题目、答案、提交/解题记录、弹幕和点名记录；登录状态与 API Key 保留。</p>
+    <hr>
+    <label>提醒方式</label>
+    <p class="muted">点名只提醒，不会自动做任何操作。开启桌面通知后，点中你时即使切到其他标签页也能看到提醒。</p>
+    <div class="row"><button id="notify-btn">开启桌面通知</button><button id="test-alert">测试提醒</button><button onclick="closeSettings()">关闭</button></div>
+    <p class="muted" id="notify-hint"></p>
+  </div>
+</div>
+
+<div class="modal" id="switch-modal" hidden>
+  <div class="modal-card wide">
+    <h2>检测到课堂切换</h2>
+    <p id="switch-text"></p>
+    <p class="muted">清空会删除当前课堂的题目、答案、提交/解题记录、弹幕和点名记录，无法恢复；登录状态与 API Key 会保留。</p>
+    <div class="row"><button class="primary" id="switch-clear">清空并切换</button><button id="switch-keep">保留并切换</button><button id="switch-cancel">取消</button></div>
+  </div>
+</div>
+
+<script>
+var TYPE={1:'单选',2:'多选',3:'投票',4:'填空',5:'主观'};
+var STATUS={new:'新题',submitted:'已提交',pending:'待处理',failed:'失败',old:'旧题'};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+function ago(ts){ if(!ts) return '--'; var d=Date.now()-ts; if(d<0)d=0; if(d<60000) return Math.round(d/1000)+'s'; if(d<3600000) return Math.round(d/60000)+'min'; return (d/3600000).toFixed(1)+'h'; }
+function ttype(t){ return TYPE[t]||'题型—'; }
+function hhmm(ts){ if(!ts) return '--'; var d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
+async function api(p,o){ var r=await fetch(p,o||{}); var t=await r.text(); try{return JSON.parse(t);}catch(e){return {raw:t};} }
+
+var cardUI={};
+var solveAbort={};
+var lastProblemsSig='';
+function uiFor(id){ if(!cardUI[id]) cardUI[id]={checked:[],result:'',busy:false}; return cardUI[id]; }
+function applyCardUI(card,id){
+  if(!card) return;
+  var ui=uiFor(id);
+  [].slice.call(card.querySelectorAll('input[type=checkbox]')).forEach(function(b){ b.checked=ui.checked.indexOf(b.value)>=0; b.disabled=ui.busy; });
+  var res=card.querySelector('.result'); if(res) res.textContent=ui.result||'';
+  var sb=card.querySelector('[data-act=solve]'); if(sb){ sb.disabled=false; sb.textContent='AI 解题'; sb.title='再次点击会强制中断当前解题并重新开始'; }
+  var ub=card.querySelector('[data-act=submit]'); if(ub) ub.disabled=ui.busy;
+}
+function findCard(id){ return document.querySelector('#list .card[data-id=\"'+id+'\"]'); }
+
+var modal=document.getElementById('login-modal');
+var settingsModal=document.getElementById('settings-modal');
+var switchModal=document.getElementById('switch-modal');
+var pendingLessonId='', pendingLessonName='';
+var demo=location.search.indexOf('demo=login')>=0;
+var demoQrStarted=false;
+var lastAlertSeq=0, audioCtx=null, lastNotifiedSeq=0;
+var lastStatus=null;
+var autoSettingsReasons={};
+var fastTimers=[];
+var statusTimer=null;
+var initialDataLoaded=false;
+
+function initAudio(){ try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }catch(e){} }
+function beep(){
+  try{
+    initAudio(); if(!audioCtx) return;
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type='sine'; o.frequency.value=880; g.gain.value=0.12;
+    o.connect(g); g.connect(audioCtx.destination); o.start();
+    o.frequency.setValueAtTime(880,audioCtx.currentTime);
+    o.frequency.setValueAtTime(1320,audioCtx.currentTime+0.18);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.5);
+    o.stop(audioCtx.currentTime+0.55);
+  }catch(e){}
+}
+function notifyRollcall(st){
+  if(!st || st.hit===false) return;
+  if(Notification && Notification.permission==='granted'){
+    try{ new Notification('雨课堂点名：点中了你', {body:(st.title||'随机点名')+' '+(st.picked||''), tag:'yuketang-rollcall'}); }catch(e){}
+  }
+  beep();
+}
+
+function showBanner(st){
+  var b=document.getElementById('rollcall-banner');
+  document.getElementById('rollcall-text').textContent=(st.title||'随机点名')+(st.picked?(' · '+st.picked):'')+' · '+hhmm(st.ts);
+  b.hidden=false;
+  document.title='⚠️ 点名点中你 · 雨课堂助手';
+}
+function hideBanner(){ document.getElementById('rollcall-banner').hidden=true; document.title='雨课堂 · 课堂助手'; }
+async function ackRollcall(){
+  var st=await api('/rollcall/status'); var seq=(st&&st.alertSeq)||lastAlertSeq;
+  await api('/rollcall/ack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seq:seq})});
+  hideBanner(); loadRollcall();
+}
+
+function lessonSwitching(s){
+  return !!(s && s.lesson && s.lesson.lessonId && s.watcher && s.watcher.lessonId && String(s.watcher.lessonId)!==String(s.lesson.lessonId));
+}
+function settingsIssue(s){
+  if(!s) return '';
+  var w=s.watcher||{};
+  if((w.ended || w.ws==='ended') && !lessonSwitching(s)) return 'ended';
+  if(!(s.lesson && s.lesson.lessonId)) return 'lesson';
+  if(!(s.settings && s.settings.apiKeySet)) return 'key';
+  return '';
+}
+function maybeAutoOpenSettings(s){
+  if(!(s && s.login && s.login.ok)) return;
+  var reason=settingsIssue(s);
+  if(!reason || autoSettingsReasons[reason]) return;
+  autoSettingsReasons[reason]=1;
+  if(!modal.hidden || !settingsModal.hidden) return;
+  openSettings(reason);
+}
+function startFastPolling(){
+  if(fastTimers.length) return;
+  loadProblems(); loadEvents(); loadDanmu(); loadRollcall();
+  fastTimers=[
+    setInterval(loadEvents,3000),
+    setInterval(loadDanmu,3000),
+    setInterval(loadProblems,6000),
+    setInterval(loadRollcall,2000)
+  ];
+}
+function stopFastPolling(){
+  fastTimers.forEach(function(t){ clearInterval(t); });
+  fastTimers=[];
+}
+function scheduleStatus(ms){
+  clearTimeout(statusTimer);
+  statusTimer=setTimeout(loadStatus,ms);
+}
+async function loadStatus(){
+  clearTimeout(statusTimer); statusTimer=null;
+  var s=await api('/status');
+  if(!s || s.raw){ stopFastPolling(); scheduleStatus(10000); return; }
+  lastStatus=s;
+  var lp=document.getElementById('pill-login');
+  if(s.login && s.login.ok){ lp.className='pill ok'; lp.textContent='已登录 · '+(s.login.name||s.login.uid||''); if(!modal.hidden && !demo) modal.hidden=true; }
+  else { lp.className='pill bad'; lp.textContent='未登录'; if(modal.hidden && !demo){ modal.hidden=false; refreshQr(false); } }
+  if(demo && modal.hidden){ modal.hidden=false; }
+  if(demo && !demoQrStarted){ demoQrStarted=true; refreshQr(false); }
+  var wp=document.getElementById('pill-ws');
+  var w=s.watcher||{};
+  var switching=lessonSwitching(s);
+  var ended=!!(w.ended || w.ws==='ended') && !switching;
+  var noLesson=!(s.lesson && s.lesson.lessonId);
+  if(ended){ wp.className='pill bad'; wp.textContent='课堂已结束'; }
+  else if(switching){ wp.className='pill info'; wp.textContent='切换课堂中'; }
+  else if(noLesson || w.ws==='no-lesson'){ wp.className='pill'; wp.textContent='未选课堂'; }
+  else if(w.ws==='open'){ wp.className='pill ok'; wp.textContent='WS 在线'; }
+  else if(w.ws==='closed'){ wp.className='pill bad'; wp.textContent='WS 断开'; }
+  else { wp.className='pill'; wp.textContent='WS 未知'; }
+  var ap=document.getElementById('pill-auto');
+  ap.className='pill '+(s.config&&s.config.autoSolve?'info':'');
+  ap.textContent='自动解题 '+((s.config&&s.config.autoSolve)?'开':'关');
+  document.getElementById('pill-delay').textContent='最小间隔 '+((s.config?Math.round(s.config.minDelayMs/1000):'--'))+'s';
+  document.getElementById('pill-age').textContent='事件 '+ago(s.lastEvent&&s.lastEvent.ts);
+  var c=s.counts||{};
+  document.getElementById('c-total').textContent=c.total||0;
+  document.getElementById('c-submitted').textContent=c.submitted||0;
+  document.getElementById('c-pending').textContent=(c.pending||0)+(c.new||0);
+  document.getElementById('c-failed').textContent=c.failed||0;
+  if(s.lesson&&s.lesson.lessonId) document.getElementById('lesson').textContent=(s.lesson.lessonName||'lesson '+s.lesson.lessonId)+' · '+String(s.lesson.lessonId).slice(-6)+(ended?'（已结束）':'');
+  else document.getElementById('lesson').textContent='未选择课堂';
+  if(s.settings) document.getElementById('apikey-hint').textContent=s.settings.apiKeySet?('已配置：'+s.settings.apiKeyMasked+' · 模型 '+s.settings.model):'未配置（AI 解题会失败）';
+  renderSubs(s.submissions||[]);
+  renderSolver(s.solver||[]);
+  if(s.login && s.login.ok && !initialDataLoaded){
+    initialDataLoaded=true;
+    loadProblems(true); loadEvents(); loadDanmu(); loadRollcall();
+  }
+  maybeAutoOpenSettings(s);
+  if(s.login && s.login.ok && !ended && !noLesson){
+    startFastPolling();
+    scheduleStatus(switching?2000:4000);
+  } else {
+    stopFastPolling();
+  }
+}
+
+async function loadRollcall(){
+  var r=await api('/rollcall/status'); var st=r||{};
+  var tip=document.getElementById('rollcall-tip');
+  var parts=[];
+  if(st.enabled===false) parts.push('监控关'); else parts.push('监控开');
+  if(st.self&&st.self.name) parts.push('我：'+st.self.name);
+  if(st.hits) parts.push('点中 '+st.hits+' 次');
+  if(st.alertSeq) parts.push('提醒 #'+st.alertSeq);
+  tip.textContent=parts.join(' · ');
+  var el=document.getElementById('rollcall');
+  var rows=[];
+  if(st.last) rows.push(st.last);
+  try{ var rr=await api('/rollcall?n=10'); if(rr&&rr.recent) rows=rr.recent.concat(rows); }catch(e){}
+  if(!rows.length){ el.innerHTML='<div class="empty">暂无点名</div>'; }
+  else{
+    var out='';
+    rows.slice(0,10).forEach(function(x){
+      out+='<div><span class="t">'+hhmm(x.ts)+'</span><span class="k '+(x.hit?'k-rollcall-hit':'k-rollcall-miss')+'">'+(x.hit?'点中我':'未点中')+'</span><span>'+esc(x.picked||x.title||'')+'</span></div>';
+    });
+    el.innerHTML=out;
+  }
+  var seq=st.alertSeq||0;
+  var ackSeq=Number(st.ackSeq||0);
+  var unacked=seq>ackSeq;
+  if(unacked && seq>lastAlertSeq){
+    lastAlertSeq=seq;
+    if(st.last && st.last.hit){
+      showBanner(st.last);
+      if(seq!==lastNotifiedSeq){ lastNotifiedSeq=seq; notifyRollcall(st.last); }
+    }
+  }
+}
+
+function renderSubs(rows){
+  var el=document.getElementById('subs');
+  if(!rows.length){ el.innerHTML='<div class="empty">暂无</div>'; return; }
+  var out='<table><tr><th>时间</th><th>页</th><th>结果</th><th>状态</th></tr>';
+  rows.forEach(function(r){
+    var ok=String(r.resp||'').indexOf('"code":0')>=0;
+    var tries=r.attempts>1?(' · '+r.attempts+'次'):'';
+    out+='<tr><td>'+hhmm(r.ts)+'</td><td>'+esc(r.si==null?'-':r.si)+'</td><td>'+esc((r.result||[]).join(','))+'</td><td>'+(ok?'<span style="color:#15803d">成功'+tries+'</span>':'<span style="color:#b91c1c">'+esc(String(r.resp||'').slice(0,40))+'</span>')+'</td></tr>';
+  });
+  el.innerHTML=out+'</table>';
+}
+function renderSolver(rows){
+  var el=document.getElementById('solver');
+  if(!rows.length){ el.innerHTML='<div class="empty">暂无</div>'; return; }
+  var out='<table><tr><th>时间</th><th>答案</th><th>耗时</th></tr>';
+  rows.forEach(function(r){
+    out+='<tr><td>'+hhmm(r.ts)+'</td><td>'+esc((r.answers||[]).join(','))+'</td><td>'+esc(r.ms==null?'-':(Math.round(r.ms/100)/10+'s'))+'</td></tr>';
+  });
+  el.innerHTML=out+'</table>';
+}
+
+async function loadEvents(){
+  var rows=await api('/logs?n=50');
+  var el=document.getElementById('events');
+  if(!Array.isArray(rows)||!rows.length){ el.innerHTML='<div class="empty">暂无事件</div>'; return; }
+  var out='';
+  rows.slice().reverse().forEach(function(r){
+    var detail=r.problemId?(' '+String(r.problemId).slice(-6)):'';
+    if(r.si!=null) detail+=' · P'+r.si;
+    if(r.answers) detail+=' · '+r.answers.join(',');
+    if(r.result) detail+=' · '+r.result.join(',');
+    if(r.waitMs!=null) detail+=' · 等'+Math.round(r.waitMs/1000)+'s';
+    if(r.op) detail+=' · '+r.op;
+    if(r.picked) detail+=' · '+r.picked;
+    if(r.lessonId) detail+=' · '+String(r.lessonId).slice(-6);
+    if(r.status!=null) detail+=' · '+r.status;
+    if(r.msg) detail+=' · '+String(r.msg).slice(0,40);
+    out+='<div><span class="t">'+hhmm(r.ts)+'</span><span class="k k-'+esc(r.kind)+'">'+esc(r.kind)+'</span><span>'+esc(detail)+'</span></div>';
+  });
+  el.innerHTML=out;
+}
+
+async function loadDanmu(){
+  var r=await api('/danmu?n=20');
+  var el=document.getElementById('danmu'), tip=document.getElementById('danmu-tip');
+  var st=r.status||{};
+  var parts=[st.enabled===false?'监控关':'监控开'];
+  if(st.sendEnabled===false) parts.push('只观察');
+  if(st.threshold!=null) parts.push('窗口 '+st.windowCount+'/'+st.threshold);
+  if(st.triggered) parts.push('已跟发 '+st.triggered);
+  if(st.peak) parts.push('高峰中 · '+st.peak.text+' ×'+st.peak.count);
+  tip.textContent=parts.join(' · ');
+  var rows=r.recent||[];
+  if(!rows.length){ el.innerHTML='<div class="empty">暂无弹幕</div>'; return; }
+  var out='';
+  rows.slice().reverse().forEach(function(x){
+    var k=x.kind==='send'?'跟发':x.kind==='manual-send'?'手动':(x.action==='trigger'?'触发':x.action==='peak-no-send'?'高峰':x.action==='in-peak'?'高峰':'');
+    out+='<div><span class="t">'+hhmm(x.ts)+'</span><span class="k">'+esc(k)+'</span><span>'+esc(x.text||'')+(x.count?(' ×'+x.count):'')+'</span></div>';
+  });
+  el.innerHTML=out;
+}
+
+async function loadProblems(force){
+  var ps=await api('/problems');
+  var el=document.getElementById('list');
+  if(!Array.isArray(ps)) ps=[];
+  var sig=JSON.stringify(ps.map(function(p){return [p.problemId,p.status,p.si,p.type,p.result];}));
+  if(!force && sig===lastProblemsSig) return;
+  lastProblemsSig=sig;
+  if(!ps.length){ el.innerHTML='<div class="empty">暂无题目</div>'; return; }
+  var out='';
+  ps.forEach(function(p){
+    var st=p.status||'new';
+    var ans=(p.result||[]).join(' ');
+    var ui=uiFor(p.problemId);
+    out+='<div class="card" data-id="'+esc(p.problemId)+'">'+
+      '<div class="head"><span class="badge '+esc(st)+'">'+esc(STATUS[st]||st)+'</span><span>第 '+esc(p.si==null?'?':p.si)+' 页 · '+esc(ttype(p.type))+'</span><span style="margin-left:auto">'+esc(String(p.problemId).slice(-6))+'</span></div>'+
+      '<img class="cover" src="/cover/'+esc(p.problemId)+'" alt="题面">'+
+      '<div class="answers">'+(ans?('已选 '+ans):'')+'</div>'+
+      '<div class="choices">'+['A','B','C','D','E','F'].map(function(l){return '<label><input type="checkbox" value="'+l+'"'+(ui.checked.indexOf(l)>=0?' checked':'')+(ui.busy?' disabled':'')+'>'+l+'</label>';}).join('')+'</div>'+
+      '<div class="actions"><button data-act="solve" title="再次点击会强制中断当前解题并重新开始">AI 解题</button><button class="primary" data-act="submit"'+(ui.busy?' disabled':'')+'>手动提交答案</button></div>'+
+      '<div class="result">'+esc(ui.result)+'</div></div>';
+  });
+  el.innerHTML=out;
+  [].slice.call(el.querySelectorAll('img.cover')).forEach(function(img){
+    img.addEventListener('error',function(){ img.style.display='none'; });
+  });
+}
+
+document.getElementById('list').addEventListener('change',function(ev){
+  var box=ev.target; if(!box || !box.matches || !box.matches('input[type=checkbox]')) return;
+  var card=box.closest('.card'); if(!card) return;
+  var id=card.getAttribute('data-id');
+  uiFor(id).checked=[].slice.call(card.querySelectorAll('input[type=checkbox]')).filter(function(b){return b.checked;}).map(function(b){return b.value;});
+});
+
+document.getElementById('list').addEventListener('click',async function(ev){
+  var btn=ev.target.closest('button'); if(!btn) return;
+  var card=btn.closest('.card'); if(!card) return; var id=card.getAttribute('data-id');
+  var act=btn.getAttribute('data-act'); var ui=uiFor(id);
+  if(ui.busy) return;
+  var boxes=[].slice.call(card.querySelectorAll('input[type=checkbox]'));
+  if(act==='solve'){
+    // 正常解题和重试共用同一个入口：再次点击先中断旧请求，再强制开始新解题。
+    if(solveAbort[id]) solveAbort[id].abort();
+    var ac=new AbortController(); solveAbort[id]=ac;
+    ui.busy=true; ui.result='AI 解题中…（再次点击会强制中断并重新解题）'; applyCardUI(card,id);
+    try{
+      var r=await api('/solve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({problemId:id}),signal:ac.signal});
+      if(ac.signal.aborted) return;
+      if(r && r.aborted){ ui.result='解题已被新的请求中断'; }
+      else if(r.ok&&r.answers){ ui.checked=r.answers.slice(); ui.result='AI 答案 '+r.answers.join(',')+' · '+Math.round((r.ms||0)/1000)+'s · 请手动提交'; }
+      else ui.result='失败: '+JSON.stringify(r).slice(0,160);
+    }catch(e){
+      if(ac.signal.aborted || e.name==='AbortError') return;
+      ui.result='错误: '+e.message;
+    }
+    finally{
+      if(solveAbort[id]===ac){
+        delete solveAbort[id];
+        ui.busy=false; applyCardUI(card,id); var fresh=findCard(id); if(fresh) applyCardUI(fresh,id);
+        setTimeout(function(){ loadStatus(); loadEvents(); },300);
+      }
+    }
+    return;
+  }
+  var picked=boxes.filter(function(b){return b.checked;}).map(function(b){return b.value;});
+  ui.checked=picked.slice();
+  if(!picked.length){ ui.result='先勾选选项'; applyCardUI(card,id); return; }
+  ui.busy=true; ui.result='提交中…'; applyCardUI(card,id);
+  try{
+    var rr=await api('/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({problemId:id,result:picked})});
+    ui.result=JSON.stringify(rr).slice(0,160);
+    if(rr && (rr.status===200 || rr.ok)) { /* 服务端 state 已更新，稍后重渲染 */ }
+  }catch(e){ ui.result='错误: '+e.message; }
+  finally{
+    ui.busy=false; applyCardUI(card,id); var fresh=findCard(id); if(fresh) applyCardUI(fresh,id);
+    setTimeout(function(){ loadProblems(true); loadStatus(); loadEvents(); },700);
+  }
+});
+
+async function refreshQr(force){
+  var hint=document.getElementById('login-hint');
+  hint.textContent='正在获取二维码…';
+  try{
+    var r=await api('/login/start'+(force?'?force=1':''));
+    if(r.login&&r.login.ok&&!demo){ modal.hidden=true; loadStatus(); return; }
+    if(r.qr){ document.getElementById('qr').src=r.qr+'&t='+Date.now(); hint.textContent='等待扫码…'; }
+    else hint.textContent='二维码不可用: '+JSON.stringify(r).slice(0,120);
+  }catch(e){ hint.textContent='获取二维码失败: '+e.message; }
+}
+
+async function pollLogin(){
+  if(modal.hidden) return;
+  try{
+    var r=await api('/login/status');
+    if(r.login&&r.login.ok){ modal.hidden=true; loadStatus(); loadProblems(); }
+    else if(r.session){ document.getElementById('login-hint').textContent=(r.session.status==='waiting'?'等待扫码…':('会话 '+r.session.status+(r.session.error?(' · '+r.session.error):''))); }
+  }catch(e){}
+}
+
+/* ---- 设置：API Key 与课堂选择 ---- */
+function openSettings(reason){
+  reason=reason||settingsIssue(lastStatus);
+  settingsModal.hidden=false;
+  var box=document.getElementById('settings-reason');
+  var msg={ended:'当前课堂已结束，课堂轮询与自动重连已停止。请选择新的课堂。',lesson:'尚未选择课堂，请选择正在上课的课堂。',key:'尚未配置 DeepSeek API Key，AI 解题会失败。'}[reason]||'';
+  box.hidden=!msg; box.textContent=msg;
+  loadLessons();
+  setTimeout(function(){ var el=document.getElementById(reason==='key'?'apikey':'lesson-select'); if(el) el.focus(); },80);
+}
+function closeSettings(){ settingsModal.hidden=true; }
+document.getElementById('btn-settings').addEventListener('click',function(){ openSettings(); });
+document.getElementById('save-key').addEventListener('click',async function(){
+  var v=document.getElementById('apikey').value.trim();
+  if(!v){ document.getElementById('apikey-hint').textContent='请输入 Key'; return; }
+  var r=await api('/settings/api-key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:v})});
+  if(r&&r.ok){ document.getElementById('apikey').value=''; document.getElementById('apikey-hint').textContent='已保存：'+r.apiKeyMasked; initAudio(); }
+  else document.getElementById('apikey-hint').textContent='保存失败: '+JSON.stringify(r).slice(0,120);
+});
+document.getElementById('clear-key').addEventListener('click',async function(){
+  var r=await api('/settings/api-key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:''})});
+  document.getElementById('apikey-hint').textContent=(r&&r.ok)?'已清除':'清除失败';
+});
+async function loadLessons(){
+  var sel=document.getElementById('lesson-select'); var hint=document.getElementById('lesson-hint');
+  hint.textContent='正在获取课堂列表…';
+  try{
+    var r=await api('/lessons');
+    if(!r.lessons){ hint.textContent='获取失败: '+JSON.stringify(r).slice(0,160); return; }
+    if(!r.lessons.length){
+      sel.innerHTML='<option value="">当前没有正在上课的课堂</option>';
+      hint.textContent=(settingsIssue(lastStatus)==='ended')?'当前课堂已结束，且暂时没有进行中的课堂':'当前没有正在上课的课堂，开课后点「刷新列表」';
+      return;
+    }
+    var cur=(r.selected&&r.selected.lessonId)||'';
+    var activeSelected=r.lessons.some(function(x){return String(x.lessonId)===cur;});
+    if(!activeSelected) cur='';
+    sel.innerHTML=r.lessons.map(function(x){
+      return '<option value="'+esc(x.lessonId)+'"'+(String(x.lessonId)===cur?' selected':'')+'>'+esc(x.classroomName||x.courseName||x.lessonId)+' · '+esc(String(x.lessonId).slice(-6))+'</option>';
+    }).join('');
+    hint.textContent='共 '+r.lessons.length+' 个进行中的课堂'+(cur?(' · 当前 '+cur):' · 尚未选择');
+    if(!activeSelected && settingsIssue(lastStatus)==='ended') hint.textContent='当前课堂已结束，请选择新的课堂 · 共 '+r.lessons.length+' 个进行中';
+  }catch(e){ hint.textContent='获取失败: '+e.message; }
+}
+document.getElementById('refresh-lessons').addEventListener('click',loadLessons);
+
+function historyTotal(){
+  return Number((lastStatus && lastStatus.counts && lastStatus.counts.total) || 0);
+}
+function clearLocalHistoryUI(){
+  cardUI={}; lastProblemsSig=''; hideBanner();
+  lastAlertSeq=0; lastNotifiedSeq=0;
+  loadProblems(true); loadEvents(); loadDanmu(); loadRollcall(); loadStatus();
+}
+async function selectLesson(id, clear, name){
+  var hint=document.getElementById('lesson-hint');
+  if(clear){
+    hint.textContent='正在清空当前课堂历史数据…';
+    var c=await api('/history/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'switch'})});
+    if(!c || !c.ok){ hint.textContent='清空失败: '+JSON.stringify(c||{}).slice(0,160); return false; }
+    clearLocalHistoryUI();
+  }
+  hint.textContent='切换中…';
+  var r=await api('/lesson/select',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lessonId:id})});
+  if(r&&r.ok){
+    switchModal.hidden=true;
+    hint.textContent='已选择：'+(r.lesson.lessonName||name||id)+'，watcher 将在几秒内重连';
+    setTimeout(function(){ loadStatus(); },600);
+    return true;
+  }
+  hint.textContent='切换失败: '+JSON.stringify(r).slice(0,160);
+  return false;
+}
+document.getElementById('select-lesson').addEventListener('click',async function(){
+  var sel=document.getElementById('lesson-select');
+  var id=sel.value; var hint=document.getElementById('lesson-hint');
+  if(!id){ hint.textContent='先选择一个课堂'; return; }
+  var name=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].textContent:'';
+  var current=(lastStatus&&lastStatus.lesson&&lastStatus.lesson.lessonId)||'';
+  if(String(id)===String(current)){ hint.textContent='已经是当前课堂'; return; }
+  if(historyTotal()<=0){ await selectLesson(id,false,name); return; }
+  pendingLessonId=id; pendingLessonName=name;
+  document.getElementById('switch-text').textContent='检测到切换到「'+name+'」。是否清空当前课堂的历史数据？';
+  switchModal.hidden=false;
+});
+document.getElementById('switch-clear').addEventListener('click',async function(){
+  if(!pendingLessonId) return;
+  this.disabled=true; document.getElementById('switch-keep').disabled=true; document.getElementById('switch-cancel').disabled=true;
+  await selectLesson(pendingLessonId,true,pendingLessonName);
+  this.disabled=false; document.getElementById('switch-keep').disabled=false; document.getElementById('switch-cancel').disabled=false;
+});
+document.getElementById('switch-keep').addEventListener('click',async function(){
+  if(!pendingLessonId) return;
+  this.disabled=true; document.getElementById('switch-clear').disabled=true; document.getElementById('switch-cancel').disabled=true;
+  await selectLesson(pendingLessonId,false,pendingLessonName);
+  this.disabled=false; document.getElementById('switch-clear').disabled=false; document.getElementById('switch-cancel').disabled=false;
+});
+document.getElementById('switch-cancel').addEventListener('click',function(){
+  switchModal.hidden=true; pendingLessonId=''; pendingLessonName='';
+  document.getElementById('lesson-hint').textContent='已取消切换';
+});
+document.getElementById('clear-history').addEventListener('click',async function(){
+  var hint=document.getElementById('lesson-hint');
+  if(!confirm('确定清空当前课堂的全部历史数据？题目、答案、提交/解题记录、弹幕和点名记录都会被删除，无法恢复。')) return;
+  this.disabled=true;
+  hint.textContent='正在清空当前课堂历史数据…';
+  var c=await api('/history/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'manual'})});
+  this.disabled=false;
+  if(c&&c.ok){ hint.textContent='已清空当前课堂历史数据'; clearLocalHistoryUI(); }
+  else hint.textContent='清空失败: '+JSON.stringify(c||{}).slice(0,160);
+});
+document.getElementById('notify-btn').addEventListener('click',async function(){
+  initAudio();
+  if(!('Notification' in window)){ document.getElementById('notify-hint').textContent='当前浏览器不支持桌面通知'; return; }
+  var p=await Notification.requestPermission();
+  document.getElementById('notify-hint').textContent='桌面通知：'+(p==='granted'?'已开启':p==='denied'?'已拒绝':'未授权');
+  if(p==='granted'){ try{ new Notification('雨课堂助手',{body:'点名提醒已开启'}); }catch(e){} }
+});
+document.getElementById('test-alert').addEventListener('click',function(){
+  initAudio(); beep();
+  var st={title:'测试：随机点名',picked:'（这是测试提醒）',ts:Date.now(),hit:true};
+  showBanner(st);
+  if(Notification && Notification.permission==='granted'){ try{ new Notification('雨课堂点名：点中了你',{body:st.title+' '+st.picked,tag:'yuketang-test'}); }catch(e){} }
+});
+
+document.addEventListener('visibilitychange',function(){ if(!document.hidden){ loadStatus(); } });
+loadStatus();
+setInterval(function(){ if(!modal.hidden) pollLogin(); },2500);
+</script>
+</body>
+</html>

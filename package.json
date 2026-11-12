@@ -1,0 +1,29 @@
+{
+  "name": "yuketang-helper",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "雨课堂课堂助手：自动取题/解题/提交、弹幕高峰跟发、点名监控",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node scripts/launch.mjs",
+    "launch": "node scripts/launch.mjs",
+    "server": "node src/server.ts",
+    "watcher": "node src/watcher.ts",
+    "login": "node src/login.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/danmaku.test.ts tests/rollcall.test.ts tests/solveRun.test.ts tests/history.test.ts",
+    "test:danmaku": "node tests/danmaku.test.ts"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.5",
+    "typescript": "^5.9.0"
+  }
+}
